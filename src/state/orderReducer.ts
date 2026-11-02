@@ -1,5 +1,6 @@
 import i18next from 'i18next'
 import { uid } from '@/lib/utils'
+import { initialBooksState } from '@/state/bookReducer'
 import type { AppAction, AppState } from '@/types'
 
 export const initialState: AppState = {
@@ -13,6 +14,7 @@ export const initialState: AppState = {
   services: [],
   paid: false,
   lastMessage: i18next.t('message.welcome'),
+  books: initialBooksState,
 }
 
 const stageMessages: Record<string, string> = {

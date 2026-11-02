@@ -11,18 +11,31 @@ import { MenuView } from '@/components/MenuView'
 import { OrderView } from '@/components/OrderView'
 import { ServiceSheet } from '@/components/ServiceSheet'
 import { TopBar } from '@/components/TopBar'
+import { BooksView } from '@/components/BooksView'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useElderlyMode } from '@/hooks/useElderlyMode'
 import { initialViewFromHash, useViewRoute } from '@/hooks/useViewRoute'
 import { orderReducer, initialState } from '@/state/orderReducer'
+import { booksReducer } from '@/state/bookReducer'
 import { products } from '@/data/menu'
 import { money } from '@/lib/utils'
-import type { AppState, ViewName } from '@/types'
+import type { AppAction, AppState, ViewName } from '@/types'
+
+function rootReducer(state: AppState, action: AppAction): AppState {
+  // 先执行 orderReducer（处理原有业务 action 与 SET_VIEW/BIND_TABLE 等），
+  // 再交给 booksReducer 处理 BOOKS_* action；两者互不修改对方子树。
+  return booksReducer(orderReducer(state, action), action)
+}
 
 function createInitialState(): AppState {
   const search = new URLSearchParams(window.location.search)
   const requestedView = initialViewFromHash()
+
+  // books 视图可在无桌台情况下直接访问
+  if (requestedView === 'books') {
+    return { ...initialState, view: 'books', table: null }
+  }
 
   // preview=menu：预置一桌带购物车的点餐态，供设计/截图预览
   if (search.get('preview') === 'menu') {
@@ -48,7 +61,7 @@ function createInitialState(): AppState {
 
 export default function App() {
   const { t, i18n } = useTranslation()
-  const [state, dispatch] = useReducer(orderReducer, undefined, createInitialState)
+  const [state, dispatch] = useReducer(rootReducer, undefined, createInitialState)
   const { enabled: elderly, toggle: toggleElderly } = useElderlyMode()
   const [serviceOpen, setServiceOpen] = useState(false)
   const [consoleOpen, setConsoleOpen] = useState(false)
@@ -56,14 +69,14 @@ export default function App() {
   const cartTotal = state.cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const waitingServices = state.services.filter((service) => service.status === 'waiting').length
 
-  // 视图 ↔ URL hash 双向同步；未绑定桌台时只有 home 可达，其余地址回落到 home
-  const canView = useCallback((view: ViewName) => view === 'home' || !!state.table, [state.table])
+  // 视图 ↔ URL hash 双向同步；未绑定桌台时只有 home / books 可达，其余地址回落到 home
+  const canView = useCallback((view: ViewName) => view === 'home' || view === 'books' || !!state.table, [state.table])
   const navigate = useCallback((view: ViewName) => dispatch({ type: 'SET_VIEW', view }), [])
   useViewRoute(state.view, { onNavigate: navigate, canView })
 
   useEffect(() => {
     document.documentElement.lang = i18n.language === 'zh' ? 'zh-CN' : 'en'
-    document.title = t('common.title')
+    document.title = state.view === 'books' ? t('books.page_title') : t('common.title')
     const metaDesc = document.querySelector('meta[name="description"]')
     if (metaDesc) metaDesc.setAttribute('content', t('common.meta_desc'))
     try {
@@ -71,7 +84,7 @@ export default function App() {
     } catch {
       // localStorage 不可用时降级为内存态，不报错不阻塞
     }
-  }, [i18n.language, t])
+  }, [i18n.language, t, state.view])
 
   const changeView = (view: ViewName) => dispatch({ type: 'SET_VIEW', view })
   const submitOrder = () => {
@@ -86,8 +99,23 @@ export default function App() {
     dispatch({ type: 'SET_MESSAGE', message: elderly ? '已切换为常规模式' : '已切换为老人模式' })
   }
 
+  if (state.view === 'books') {
+    return (
+      <BooksView
+        state={state.books}
+        lastMessage={state.lastMessage}
+        language={i18n.language}
+        elderly={elderly}
+        onToggleLanguage={toggleLanguage}
+        onToggleElderly={handleToggleElderly}
+        onBack={() => changeView(state.table ? 'menu' : 'home')}
+        onDispatch={dispatch}
+      />
+    )
+  }
+
   if (state.view === 'home' || !state.table) {
-    return <HomeView onBind={(table) => dispatch({ type: 'BIND_TABLE', table })} />
+    return <HomeView onBind={(table) => dispatch({ type: 'BIND_TABLE', table })} onEnterBooks={() => changeView('books')} />
   }
 
   if (state.view === 'welcome') {
