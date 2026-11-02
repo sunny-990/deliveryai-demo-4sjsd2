@@ -46,14 +46,14 @@ function seedRecords(books: Book[]): BorrowRecord[] {
   const huozhe = findByTitle('活着')
   const wanli = findByTitle('万历十五年')
   const active: BorrowRecord[] = [
-    mk(santi, '我', 5, null),      // 借阅中
-    mk(huozhe, '我', 20, null),    // 逾期（20 天前借出，应还 6 天前）
-    mk(wanli, '代借读者', 10, null), // 管理员代借，万历十五年已借出
+    mk(santi, '__me__', 5, null),      // 借阅中
+    mk(huozhe, '__me__', 20, null),    // 逾期（20 天前借出，应还 6 天前）
+    mk(wanli, '__guest__', 10, null), // 管理员代借，万历十五年已借出
   ]
   // 两笔已归还历史记录
   const history: BorrowRecord[] = [
-    mk(santi, '我', 45, 30),
-    mk(findByTitle('人类简史'), '我', 40, 25),
+    mk(santi, '__me__', 45, 30),
+    mk(findByTitle('人类简史'), '__me__', 40, 25),
   ]
   return [...active, ...history]
 }

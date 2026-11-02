@@ -6,7 +6,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { ME_BORROWER_KEY } from '@/data/books'
 import type { AppAction, Book, BooksState, BorrowRecord } from '@/types'
 
 interface BooksViewProps {
@@ -73,7 +72,7 @@ function formatDate(iso: string, language: string) {
 }
 
 export function BooksView({ state, lastMessage, language, elderly, onToggleLanguage, onToggleElderly, onBack, onDispatch }: BooksViewProps) {
-  const { t } = useTranslation()
+const { t } = useTranslation()
   const { books, borrowRecords, categories, ui } = state
   const isAdmin = ui.role === 'admin'
   const nowMs = Date.now()
@@ -110,11 +109,10 @@ export function BooksView({ state, lastMessage, language, elderly, onToggleLangu
   }, [books, ui.keyword, ui.categoryFilter])
 
   // ---- 借阅记录分区 ----
-  const me = t(ME_BORROWER_KEY)
   const visibleRecords = useMemo(() => {
     if (isAdmin) return borrowRecords
-    return borrowRecords.filter((r) => r.borrowerName === me)
-  }, [borrowRecords, isAdmin, me])
+    return borrowRecords.filter((r) => r.borrowerName === '__me__')
+  }, [borrowRecords, isAdmin])
 
   const activeRecords = useMemo(
     () => visibleRecords
@@ -243,7 +241,7 @@ export function BooksView({ state, lastMessage, language, elderly, onToggleLangu
             <span className="hidden sm:block"><strong className="block leading-4 text-charcoal-900">{t('books.title')}</strong><small className="text-charcoal-500">{t('books.subtitle')}</small></span>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={onToggleElderly} aria-label={elderly ? '切换至常规模式' : '切换至老人模式'}>
+            <Button variant="outline" size="icon" onClick={onToggleElderly} aria-label={elderly ? t("books.aria.elderly_off") : t("books.aria.elderly_on")}>
               <Accessibility size={18} className={elderly ? 'text-chili-500' : ''} />
             </Button>
             <Button variant="outline" size="sm" onClick={onToggleLanguage} aria-label={t('common.aria_lang')}>
@@ -562,7 +560,10 @@ function RecordRow({ r, status, language, isAdmin, onReturn }: { r: BorrowRecord
       <div className="min-w-0 flex-1">
         <p className="truncate font-bold text-charcoal-900">{r.bookTitle}</p>
         <p className="mt-0.5 text-xs text-charcoal-500">
-          {isAdmin && <span className="mr-2">{t('books.records.borrower')}: <strong className="text-charcoal-700">{r.borrowerName}</strong></span>}
+          {isAdmin && <span className="mr-2">{t('books.records.borrower')}: <strong className="text-charcoal-700">{
+                  r.borrowerName === '__me__' ? t('books.common.me') :
+                  r.borrowerName === '__guest__' ? t('books.common.guest') : r.borrowerName
+                }</strong></span>}
           <span>{t('books.records.borrowed_at')}: {formatDate(r.borrowedAt, language)}</span>
           <span className="mx-1.5 text-charcoal-300">·</span>
           <span>{t('books.records.due')}: {formatDate(r.dueDate, language)}</span>

@@ -1,6 +1,6 @@
 import i18next from 'i18next'
 import { uid } from '@/lib/utils'
-import { BOOK_LOAN_DAYS, GUEST_BORROWER_KEY, ME_BORROWER_KEY, createInitialBooksState } from '@/data/books'
+import { BOOK_LOAN_DAYS, createInitialBooksState } from '@/data/books'
 import type { AppAction, AppState, Book, BooksState } from '@/types'
 
 export const initialBooksState: BooksState = createInitialBooksState()
@@ -84,8 +84,9 @@ export function booksReducer(state: AppState, action: AppAction): AppState {
       const book = state.books.books.find((b) => b.id === bookId)
       if (!book || book.availableStock <= 0) return state
       const isReader = state.books.ui.role === 'reader'
+      // 使用符号 key 存储借阅人，渲染时再翻译，保证切换语言后历史记录跟随切换
       const borrowerName = action.borrowerName
-        ?? (isReader ? i18next.t(ME_BORROWER_KEY) : i18next.t(GUEST_BORROWER_KEY))
+        ?? (isReader ? '__me__' : '__guest__')
       const now = new Date().toISOString()
       const record = {
         id: uid(),

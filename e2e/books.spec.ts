@@ -2,9 +2,8 @@ import { test, expect, type Page } from '@playwright/test'
 
 async function gotoBooks(page: Page) {
   await page.goto('/#/books', { waitUntil: 'domcontentloaded' })
-  await page.waitForURL(/#\/books$/, { timeout: 20000 })
-  // 等待核心内容挂载
-  await expect(page.getByRole('heading', { name: /馆藏图书|Library Collection/ })).toBeVisible()
+  // 等待核心内容挂载（不依赖 waitForURL 事件，以兼容 SPA 同 URL 重入）
+  await expect(page.getByRole('heading', { name: /馆藏图书|Library Collection/ })).toBeVisible({ timeout: 20000 })
 }
 
 /** 在图书列表中根据书名定位一张卡片 */
@@ -19,8 +18,7 @@ test.describe('图书管理模块 - E2E 验收测试', () => {
     const entry = page.getByRole('button', { name: /图书管理|Books/ })
     await expect(entry.first()).toBeVisible()
     await entry.first().click()
-    await page.waitForURL(/#\/books$/, { timeout: 20000 })
-    await expect(page.getByRole('heading', { name: /馆藏图书|Library Collection/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /馆藏图书|Library Collection/ })).toBeVisible({ timeout: 20000 })
   })
 
   test('BOOKS-002: 深链接直接进入 #/books 且默认管理员视图', async ({ page }) => {
@@ -204,8 +202,7 @@ test.describe('图书管理模块 - E2E 验收测试', () => {
     await page.getByRole('button', { name: /^确认$|^Confirm$/ }).click()
     await expect(bookCard(page, '小王子').getByText(/3.*\/.*4/)).toBeVisible()
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.waitForURL(/#\/books$/, { timeout: 20000 })
-    await expect(page.getByRole('heading', { name: /馆藏图书|Library Collection/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /馆藏图书|Library Collection/ })).toBeVisible({ timeout: 20000 })
     await expect(bookCard(page, '小王子').getByText(/4.*\/.*4/)).toBeVisible()
   })
 
@@ -221,11 +218,28 @@ test.describe('图书管理模块 - E2E 验收测试', () => {
     await page.getByRole('button', { name: '微辣' }).click()
     await page.getByRole('button', { name: '加入本桌购物车' }).click()
     // 桌面右侧 CartPanel 提交订单
-    await page.getByRole('button', { name: /确认并提交订单|Confirm \& Submit Order/ }).click()
+    await page.getByRole('button', { name: /确认并提交订单|Confirm & Submit Order/ }).click()
     // 进入订单页
     await page.getByRole('button', { name: /订单|Orders/ }).first().click()
     await expect(page).toHaveURL(/#\/order$/)
     await page.getByRole('button', { name: /去结账|Checkout/ }).first().click()
     await expect(page).toHaveURL(/#\/checkout$/)
   })
+})
+
+test('BOOKS-019: 从火锅 TopBar 先切英文再进入 BooksView，图书文案显示英文', async ({ page }) => {
+  await page.goto('/#/menu', { waitUntil: 'domcontentloaded' })
+  // 在点餐页（TopBar 可见）切换到英文
+  const langBtn = page.getByRole('button', { name: /切换语言|Switch language/ })
+  await langBtn.filter({ hasText: 'EN' }).click()
+  await page.waitForTimeout(300)
+  // 从 TopBar 进入 Books
+  await page.getByRole('button', { name: /Books|图书管理/ }).first().click()
+  await page.waitForURL(/#\/books$/, { timeout: 20000 })
+  await expect(page.getByRole('heading', { name: 'Library Collection' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Add Book' })).toBeVisible()
+  await expect(page.getByPlaceholder('Search title, author or ISBN')).toBeVisible()
+  // 切回中文
+  await page.getByRole('button', { name: /切换语言|Switch language/ }).filter({ hasText: '中' }).click()
+  await expect(page.getByRole('heading', { name: '馆藏图书' })).toBeVisible()
 })

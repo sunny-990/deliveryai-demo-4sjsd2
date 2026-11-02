@@ -244,6 +244,7 @@ const resources = {
         title: '图书管理',
         subtitle: 'Library · Demo',
         back: '返回',
+        aria: { elderly_on: '切换至老人模式', elderly_off: '切换至常规模式' },
         hero_title: '馆藏图书',
         hero_desc: '管理员维护图书，读者借还书籍，纯前端演示。',
         role: { admin: '管理员视图', reader: '读者视图' },
@@ -528,12 +529,14 @@ const resources = {
         reset: 'Demo has been reset',
         welcome: 'Welcome to the concept demo',
         preview: 'Preview mode · Table A08 bound',
+      },
       books: {
         page_title: 'Boiling Point · Library',
         entry: 'Books',
         title: 'Library',
         subtitle: 'Library · Demo',
         back: 'Back',
+        aria: { elderly_on: 'Enable elderly mode', elderly_off: 'Disable elderly mode' },
         hero_title: 'Library Collection',
         hero_desc: 'Admins manage books; readers borrow and return — a pure frontend demo.',
         role: { admin: 'Admin', reader: 'Reader' },
@@ -581,7 +584,6 @@ const resources = {
           has_active_borrow: 'This book has active loans, please return them first',
         },
       },
-      },
     },
   },
 } as const
@@ -604,6 +606,9 @@ void i18next.use(initReactI18next).init({
   fallbackLng: 'zh',
   interpolation: {
     escapeValue: false,
+  },
+  react: {
+    useSuspense: false,
   },
 })
 
