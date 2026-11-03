@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Check, ChevronRight, MapPin, QrCode, Sparkles, Users } from 'lucide-react'
+import { BookOpen, Check, ChevronRight, MapPin, QrCode, Sparkles, Users } from 'lucide-react'
 import hotpot from '@/assets/hotpot.jpg'
 import { Button } from '@/components/ui/button'
 
@@ -10,9 +10,12 @@ const tableOptions = [
   { code: 'D03', areaKey: 'bind.area.window', seats: 6 },
 ]
 
-interface HomeViewProps { onBind: (table: string) => void }
+interface HomeViewProps {
+  onBind: (table: string) => void
+  onEnterBooks?: () => void
+}
 
-export function HomeView({ onBind }: HomeViewProps) {
+export function HomeView({ onBind, onEnterBooks }: HomeViewProps) {
   const { t } = useTranslation()
   return (
     <main className="relative min-h-screen overflow-hidden bg-rice-100 paper-noise">
@@ -33,6 +36,11 @@ export function HomeView({ onBind }: HomeViewProps) {
               <span key={item} className="flex items-center gap-2 rounded-full bg-white px-3 py-2 shadow-sm"><Check size={15} className="text-chili-500" />{item}</span>
             ))}
           </div>
+          {onEnterBooks && (
+            <Button variant="outline" onClick={onEnterBooks} className="mt-6">
+              <BookOpen size={17} />{t('books.entry')}<ChevronRight size={16} />
+            </Button>
+          )}
         </section>
 
         <section className="animate-rise rounded-3xl border border-white/80 bg-white/90 p-4 shadow-float backdrop-blur sm:p-6">
